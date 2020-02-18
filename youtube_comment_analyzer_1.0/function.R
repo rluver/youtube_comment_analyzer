@@ -8,7 +8,7 @@ get_youtube_comment = function(url){
   if(str_detect(url, "youtube.com/watch\\?v=.+") == T){
     
     return(
-      Authenticate("youtube", "AIzaSyD93rsyICO0LeKeNd6yCL_3weu1IYxvLng") %>% 
+      Authenticate("youtube", "") %>% 
         Collect(GetYoutubeVideoIDs(url), 
                 writeToFile = F, 
                 maxComments = 100000) %>% 
