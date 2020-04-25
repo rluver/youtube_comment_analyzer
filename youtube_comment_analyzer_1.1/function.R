@@ -292,10 +292,14 @@ get_comment_rule = memoise(function(comment, time, start, end, from, to, delete,
 
 get_ts_table = function(comment){
   
-  do.call(bind_rows, 
-          (comment %>% group_by(PublishedAt) %>% tidyr::nest() %>% 
-             mutate(data = list(head(sort(table(lapply(data, unlist)), 
-                                          decreasing = T), -1))))$data) %>% 
+  do.call(
+    bind_rows, 
+    comment %>% group_by(PublishedAt) %>% tidyr::nest() %>% 
+      mutate(data = data %>% sapply(unlist) %>% 
+               table() %>% sort(decreasing = T) %>% 
+               head(-1) %>% list()) %>%
+      .$data
+    ) %>% 
     mutate(Days = ymd(unique(comment$PublishedAt))) %>% 
     select(Days, 1:(dim(.)[2]-1)) %>% 
     tidyr::complete(Days = seq.Date(min(Days), ymd(max(str_sub(Sys.time(), 1, 10))), by = "days")) %>% 
@@ -304,8 +308,8 @@ get_ts_table = function(comment){
     group_by(Word) %>%
     mutate(Freq_acc = cumsum(freq)) %>% 
     rename(Freq = freq) %>% 
-    return()
   
+    return()  
 }
 
 
