@@ -315,17 +315,21 @@ get_ts_table = function(comment){
 
 
 
-get_ts_info = memoise(function(comment_extracted, comment, time, start, end, max, from, to, delete){
-  
+get_ts_info = memoise
+(
+  function(comment_extracted, comment, time, start, end, max, from, to, delete)
+  {
     get_ts_table(comment_extracted) %>% 
-      filter(Word %in% get_comment_dataframe(comment, 
+      filter(Word %in% (get_comment_dataframe(comment, 
                                              time,
                                              start,
                                              end,
                                              max,
                                              from,
                                              to,
-                                             delete)$Word) %>% 
-  return()
-  
-})
+                                             delete) %>% select(Word) %>% 
+              unlist())) %>% 
+
+    return()
+  }
+)
