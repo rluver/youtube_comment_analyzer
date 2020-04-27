@@ -525,3 +525,166 @@ wordCleansing = R6Class('wordCleansing',
     }
   )
 )
+
+
+getData = R6Class('getData',
+  
+  public = list(
+    comment_extracted = NA,
+    time = NA,
+    start = NA,
+    end = NA,
+    max = NA,
+    supp = NA,
+    conf = NA,
+    
+    # initialize
+    initialize = function(comment_extracted, time, start, end, max, supp, conf)
+    {
+      self$comment_extracted = comment_extracted
+      self$time = time
+      self$start = start
+      self$end = end
+      self$max = max
+      self$supp = supp
+      self$conf = conf
+    },
+    
+    # get comment reply
+    getCommentReply = function()
+    {
+     # ReplyToAnotherAuthorDisplayName → ReplyCount
+     comment %>% 
+        filter('\\.' %!in% CommentID || ParentID != NA) %>% 
+        select(AuthorDisplayName, ReplyToAnotherAuthorDisplayName, Comment, ParentID) %>%
+        left_join(self$comment %>% select(Comment, CommentId) %>%
+                    rename(ParentID = CommentId), by = "ParentID") %>% 
+        rename(Comment = Comment.y, 
+               Reply = Comment.x,
+               Replier = AuthorDisplayName,
+               Commenter = ReplyToAnotherAuthorDisplayName) %>% 
+        select(1, 2, 5 ,3) %>% 
+        filter(Replier != Commenter) %>% 
+        
+        return()
+    },
+    
+    # get comment dataframe
+    getCommentDataframe = memoise(
+      function(time, start, end, max, from, to, delete)
+      {
+        self$comment_extracted[start <= time & time <= end] %>% 
+          word_delete(delete) %>% 
+        mapply(str_replace,
+               .,
+               pattern = str_c("^", from, "$"),
+               replacement = to,
+               SIMPLIFY = T,
+               USE.NAMES = F) %>% 
+        unlist() %>% table() %>%
+        sort(decreasing = T) %>%
+        head(max) %>% 
+        data.frame() %>% 
+        rename(Word = ".") %>% 
+          
+        return()
+      }
+    ), 
+    
+    # get comment rule
+    get_comment_rule = memoise(
+      function(time, start, end, from, to, delete, supp, conf, table = F)
+      {
+        if(table == T)
+        {
+          self$comment_extracted[start <= time & time <= end] %>% 
+            word_delete(delete) %>% 
+          mapply(str_replace, 
+                 .,
+                 pattern = str_c('^', from, '$'),
+                 replacement = to, 
+                 SIMPLIFY = T, 
+                 USE.NAMES = F) %>%
+          unique() %>% 
+          sapply(unique) %>% 
+          as('transactions') %>% 
+          crossTable() %>% 
+          apriori(
+            parameter = list(minlen = 2,
+                             supp = supp, 
+                             conf = conf),
+                             control = list(verbose = F)
+                  ) %>% 
+            
+          return()
+        
+      } else if(table == F)
+        {
+        
+        as_data_frame(plot(mapply(str_replace, 
+                                  comment[start <= time & time <= end] %>% word_delete(delete),
+                                  pattern = str_c("^", from, "$"),
+                                  replacement = to, 
+                                  SIMPLIFY = T, 
+                                  USE.NAMES = F) %>% 
+                             unique() %>% sapply(unique) %>% as("transactions") %>% 
+                             crossTable() %>% apriori(parameter = list(minlen = 2,
+                                                                       supp = supp, 
+                                                                       conf = conf),
+                                                      control = list(verbose = F)), 
+                           method = "graph", 
+                           plot_options = list(max = 10000,
+                                               verbose = F),
+                           control = list(
+                             max = 10000,
+                             verbose = F)),
+                      what = "both") %>% 
+          return()
+      }
+    }
+    ),
+    
+    # getTSTable
+    getTSTable = function()
+    {
+      do.call(
+        bind_rows, 
+        self$comment_extracted %>%
+          group_by(PublishedAt) %>% tidyr::nest() %>% 
+          mutate(data = data %>% sapply(unlist) %>% 
+                   table() %>% sort(decreasing = T) %>% 
+                   head(-1) %>% list()) %>%
+          .$data
+      ) %>% 
+        mutate(Days = ymd(unique(comment$PublishedAt))) %>% 
+        select(Days, 1:(dim(.)[2]-1)) %>% 
+        tidyr::complete(Days = seq.Date(min(Days), ymd(max(str_sub(Sys.time(), 1, 10))), by = "days")) %>% 
+        tidyr::gather(Word, freq, names(.)[-1]) %>% 
+        zoo::na.fill0(fill = 0) %>% 
+        group_by(Word) %>%
+        mutate(Freq_acc = cumsum(freq)) %>% 
+        rename(Freq = freq) %>% 
+        
+        return()
+    },
+    
+    # getTSInfo
+    getTSInfo = memoise(
+      function(comment_extracted, comment, time, start, end, max, from, to, delete)
+      {
+        get_ts_table(self$comment_extracted) %>% 
+          filter(Word %in% (get_comment_dataframe(comment, 
+                                                  time,
+                                                  start,
+                                                  end,
+                                                  max,
+                                                  from,
+                                                  to,
+                                                  delete) %>% select(Word) %>% 
+                              unlist())) %>% 
+          
+          return()
+      }
+    )
+  )
+)
