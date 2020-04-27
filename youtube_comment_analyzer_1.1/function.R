@@ -1,4 +1,5 @@
-require("memoise")
+require('memoise')
+require('R6')
 
 
 # User → AuthorDisplayName
@@ -332,4 +333,195 @@ get_ts_info = memoise
 
     return()
   }
+)
+
+
+
+# class
+wordCleansing = R6Class('wordCleansing',
+                        
+  public = list
+  (
+    comment = NA,
+    from = NA,
+    to = NA,
+    delete = NA,
+    
+    # initialize
+    initialize = function(comment, from, to, delete)
+    {
+      self$comment = comment
+      self$from = from
+      self$to = to
+      self$delete = delete
+    },
+    
+    # function
+    # word filter
+    wordFilter = function(){
+      
+      self$comment %>% str_replace("@.+", "") %>% 
+        
+        str_to_upper() %>% 
+        str_split("\\.{2,}") %>% unlist() %>% 
+        str_replace("\\.+", "") %>% 
+        str_replace("욬[ㅋ]+", "요") %>% 
+        
+        str_replace("^돌+i$", "또라이") %>% 
+        str_replace("^돌i$", "또라이") %>% 
+        str_replace("새해복", "새해 복") %>% 
+        str_replace("민철민아", "민철 민아") %>% 
+        str_replace("민아민철", "민아 민철") %>% 
+        str_replace("^코리안 코커$", "코리안코커") %>% 
+        
+        
+        str_split("[~`!@#$%^&*(){};',.<>/?+-_|\\[\\]]+", simplify = T)%>% 
+        str_split("[ㄱ-ㅎ]+", simplify = T) %>% 
+        str_split("[ㅏ-ㅣ]+", simplify = T) %>% 
+        str_split("♡+", simplify = T) %>% 
+        str_split("♥+", simplify = T) %>% 
+        str_split("z+", simplify = T) %>% 
+        str_split("k+", simplify = T) %>% 
+        # str_split("x?"))
+        
+        str_split("vs", simplify = T) %>% 
+        str_split("같은$", simplify = T) %>% 
+        str_split("님께$", simplify = T) %>% 
+        str_split("때문에$", simplify = T) %>% 
+        str_split("를$", simplify = T) %>% 
+        str_split("형도$", simplify = T) %>% 
+        str_split("누나도$", simplify = T) %>% 
+        str_split("들은$", simplify = T) %>% 
+        str_split("중에$", simplify = T) %>% 
+        str_split("님이랑$", simplify = T) %>% 
+        str_split("이니까$", simplify = T) %>% 
+        str_split("한테$", simplify = T) %>% 
+        str_split("이랑$", simplify = T) %>% 
+        str_split("한테는$", simplify = T) %>% 
+        str_split("님도$", simplify = T) %>% 
+        str_split("해도$", simplify = T) %>% 
+        str_split("이라는$", simplify = T) %>% 
+        str_split("[.]+님이$", simplify = T) %>% 
+        str_split("[.]+님과$", simplify = T) %>% 
+        
+        
+        # common
+        str_replace("돌아이", "또라이") %>% 
+        str_replace("누난$", "누나") %>% 
+        str_replace("앜", "아") %>% 
+        str_replace("엌", "어") %>% 
+        str_replace("얔", "야") %>% 
+        str_replace("돜$", "도") %>% 
+        str_replace("맨탈", "멘탈") %>% 
+        str_replace("횽", "형") %>% 
+        str_replace("넼", "네") %>% 
+        str_replace("PD님", "PD") %>% 
+        str_replace("피디가", "피디") %>% 
+        str_replace("^악플도$", "악플") %>% 
+        str_replace("^구독잡니다$", "구독자") %>% 
+        str_replace("^믿힌$", "미친") %>% 
+        str_replace("님과$", "") %>% 
+        str_replace("잖어$", "") %>% 
+        str_replace("잖아$", "") %>% 
+        str_replace("에요$", "") %>% 
+        str_replace("예요$", "") %>% 
+        str_replace("^해서$", "") %>% 
+        str_replace("^근데$", "") %>% 
+        str_replace("^하시$", "") %>% 
+        str_replace("^하니$", "") %>% 
+        str_replace("^안간$", "") %>% 
+        str_replace("^때문$", "") %>% 
+        str_replace("하면서$", "") %>% 
+        str_replace("^같애서$", "") %>% 
+        str_replace("^이럴$", "") %>% 
+        str_replace("^치나봐$", "") %>% 
+        str_replace("^고싶$", "") %>% 
+        str_replace("^실더$", "쉴드") %>% 
+        str_replace("^쉴더$", "쉴드") %>% 
+        str_replace("^쌉가$", "쌉가능") %>% 
+        
+        
+        # whyman
+        str_replace("^왜냐맨이$", "왜냐맨") %>% 
+        str_replace("^킹냐맨$", "왜냐맨") %>% 
+        str_replace("^민철님$", "민철") %>% 
+        str_replace("^민철군$", "민철") %>% 
+        str_replace("^민철좌$", "민철") %>% 
+        str_replace("^민철아$", "민철") %>% 
+        str_replace("^민철씨$", "민철") %>% 
+        str_replace("^민철형$", "민철") %>% 
+        str_replace("^민철이도$", "민철") %>% 
+        str_replace("^민철님이$", "민철") %>% 
+        str_replace("^장민철은$", "장민철") %>% 
+        str_replace("^장민철도$", "장민철") %>% 
+        str_replace("^민철이형$", "민철") %>% 
+        str_replace("^민철이형님$", "민철") %>% 
+        
+        str_replace("^민아님$", "민아") %>% 
+        str_replace("^민아님이$", "민아") %>% 
+        str_replace("^민아가$", "민아") %>% 
+        str_replace("^민아씨$", "민아") %>% 
+        str_replace("^민아야$", "민아") %>% 
+        str_replace("^민아도$", "민아") %>% 
+        str_replace("^김민아도$", "김민아") %>% 
+        str_replace("^김민$", "김민아") %>% 
+        str_replace("^누나가$", "누나") %>% 
+        str_replace("^누난$", "누나") %>% 
+        str_replace("^민아누나$", "민아") %>% 
+        str_replace("^민아누님$", "민아") %>% 
+        str_replace("^민아누나가$", "민아") %>% 
+        
+        str_replace("김스카이", "김하늘") %>% 
+        str_replace("^김하늘피디$", "김하늘") %>% 
+        str_replace("^김하늘피디님$", "김하늘") %>% 
+        str_replace("^하늘이형$", "김하늘") %>% 
+        str_replace("피디님$", "피디") %>% 
+        str_replace("피디는$", "피디") %>% 
+        str_replace("하늘이형이$", "하늘") %>% 
+        str_replace("^피디님이$", "피디") %>% 
+        str_replace("^하늘피디$", "김하늘") %>% 
+        str_replace("^킹하늘$", "김하늘") %>% 
+        str_replace("^스카이킴$", "김하늘") %>% 
+        
+        str_replace("^미춘누나$", "나미춘") %>% 
+        str_replace("^미춘이랑$", "나미춘") %>% 
+        str_replace("^태진이누나", "태진") %>% 
+        
+        str_replace("아조씨", "아저씨") %>% 
+        str_replace("빡빡이 아저씨", "빡빡이아저씨") %>% 
+        
+        str_replace("[:blank:]", "") %>% 
+        
+        stringi::stri_remove_empty() %>% 
+        
+        Filter(function(x){str_length(x) >= 2}, .) %>% 
+        
+        return()
+      
+    },
+    
+    # word change
+    wordChange = function(from, to)
+    {
+      self$comment %>% 
+        mapply(str_replace, ., 
+               pattern = str_c('^', from, '$'), replacement = to) %>% 
+        return()
+    },
+    
+    # word delete
+    wordDelete = function(delete)
+    {
+      if(str_length(delete) != 0){
+        self$comment %>% 
+        mapply(str_remove, ., delete, SIMPLIFY = T, USE.NAMES = F) %>% 
+          mapply(stringi::stri_remove_empty, .) %>% 
+          
+          return()
+    } else
+        self$comment %>% 
+        
+        return()
+    }
+  )
 )
